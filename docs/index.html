@@ -1,0 +1,850 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Tour de Garde</title>
+<meta name="description" content="FPS solo de defense par vagues : garde un relais au milieu du desert. Fichier unique, sans installateur, pour Windows et Linux.">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta property="og:title" content="Tour de Garde">
+<meta property="og:description" content="FPS solo de defense par vagues, fait avec Godot 4. Telecharge et joue, sans installateur.">
+<meta property="og:image" content="https://100zb.github.io/tour-de-garde/assaut.png">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Work+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --void: #12141c;
+    --surface: #1a1d28;
+    --surface-raised: #21242f;
+    --line: #333749;
+    --sand: #d9b98a;
+    --signal: #5fd0ff;
+    --signal-dim: #3c8fac;
+    --ember: #d9573c;
+    --paper: #f0e9dc;
+    --muted: #948d80;
+
+    color-scheme: dark;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+
+  html, body {
+    margin: 0;
+    background: var(--void);
+    color: var(--paper);
+    font-family: "Work Sans", -apple-system, "Segoe UI", sans-serif;
+  }
+
+  body {
+    padding-inline: clamp(18px, 5vw, 64px);
+  }
+
+  img { max-width: 100%; }
+
+  h1, h2, h3 {
+    font-family: "Teko", "Arial Narrow", sans-serif;
+    font-weight: 600;
+    text-transform: uppercase;
+    text-wrap: balance;
+    letter-spacing: 0.01em;
+    margin: 0;
+  }
+
+  .mono {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .eyebrow {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--signal);
+  }
+
+  a { color: inherit; }
+  a:focus-visible, button:focus-visible {
+    outline: 2px solid var(--signal);
+    outline-offset: 3px;
+  }
+
+  /* ---------------------------------------------------------- structure */
+
+  .page {
+    max-width: 1080px;
+    margin: 0 auto;
+  }
+
+  section {
+    padding-block: clamp(48px, 9vw, 96px);
+    border-bottom: 1px solid var(--line);
+  }
+  section:last-of-type { border-bottom: none; }
+
+  .section-head {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: clamp(28px, 5vw, 48px);
+    max-width: 640px;
+  }
+
+  .section-head h2 {
+    font-size: clamp(2.1rem, 5vw, 3rem);
+    line-height: 0.95;
+  }
+
+  .section-head p {
+    color: var(--muted);
+    font-size: 1rem;
+    line-height: 1.55;
+    max-width: 60ch;
+  }
+
+  /* ---------------------------------------------------------------- nav */
+
+  .topbar {
+    position: sticky;
+    top: env(safe-area-inset-top, 0px);
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding-block: 14px;
+    background: color-mix(in srgb, var(--void) 88%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s ease;
+  }
+  .topbar.scrolled { border-bottom-color: var(--line); }
+
+  .brand {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-family: "Teko", sans-serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+  .brand .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--signal);
+    box-shadow: 0 0 10px 1px var(--signal);
+    flex: none;
+  }
+
+  .btn-ghost {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 9px 16px;
+    white-space: nowrap;
+    transition: border-color 0.15s ease, color 0.15s ease;
+  }
+  .btn-ghost:hover { border-color: var(--signal); color: var(--signal); }
+
+  /* --------------------------------------------------------------- hero */
+
+  .hero {
+    position: relative;
+    margin-inline: clamp(-18px, -5vw, -64px);
+    padding: 0;
+    border-bottom: 1px solid var(--line);
+    overflow: hidden;
+    isolation: isolate;
+  }
+
+  .hero-frame {
+    position: relative;
+    min-height: min(88vh, 780px);
+    display: flex;
+    align-items: flex-end;
+  }
+
+  .hero-frame img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 38%;
+    z-index: -2;
+    filter: saturate(1.05) contrast(1.04);
+  }
+
+  .hero-frame::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+      linear-gradient(180deg, rgba(18,20,28,0.35) 0%, rgba(18,20,28,0.25) 30%, rgba(18,20,28,0.78) 78%, var(--void) 100%),
+      linear-gradient(90deg, rgba(18,20,28,0.55) 0%, rgba(18,20,28,0) 38%, rgba(18,20,28,0) 62%, rgba(18,20,28,0.55) 100%);
+  }
+
+  .hero-content {
+    position: relative;
+    width: 100%;
+    padding: clamp(28px, 6vw, 40px) clamp(10px, 2vw, 24px) clamp(40px, 7vw, 64px);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .hero-content .eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .hero-content .eyebrow::before {
+    content: "";
+    width: 22px; height: 1px;
+    background: var(--signal);
+  }
+
+  .hero-title {
+    font-size: clamp(3.4rem, 12vw, 7.5rem);
+    line-height: 0.86;
+    color: var(--paper);
+    text-shadow: 0 2px 30px rgba(0,0,0,0.5);
+  }
+
+  .hero-tagline {
+    max-width: 46ch;
+    font-size: clamp(1rem, 2.1vw, 1.2rem);
+    line-height: 1.5;
+    color: var(--paper);
+    opacity: 0.88;
+  }
+
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px;
+    margin-top: 6px;
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--signal);
+    color: #071019;
+    font-family: "Teko", sans-serif;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    font-size: 1.28rem;
+    text-decoration: none;
+    padding: 13px 26px 11px;
+    border-radius: 3px;
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--signal) 60%, transparent), 0 12px 32px -12px var(--signal);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 0 0 1px var(--signal), 0 16px 36px -10px var(--signal); }
+  .btn-primary svg { flex: none; }
+
+  .hero-alt {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.76rem;
+    color: var(--paper);
+    opacity: 0.75;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: color-mix(in srgb, var(--paper) 40%, transparent);
+  }
+  .hero-alt:hover { opacity: 1; }
+
+  .hero-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 20px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.72rem;
+    color: var(--paper);
+    opacity: 0.65;
+  }
+
+  /* ------------------------------------------------------------ le poste */
+
+  .pitch {
+    font-size: clamp(1.05rem, 2vw, 1.3rem);
+    line-height: 1.6;
+    color: var(--paper);
+    max-width: 62ch;
+    margin-bottom: clamp(32px, 6vw, 48px);
+  }
+  .pitch strong { color: var(--signal); font-weight: 500; }
+
+  .keys-label {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  .keyrow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 12px;
+  }
+
+  .keycap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-bottom-width: 3px;
+    border-radius: 6px;
+    padding: 8px 14px;
+  }
+
+  .keycap kbd {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--void);
+    background: var(--sand);
+    border-radius: 4px;
+    padding: 3px 7px;
+    min-width: 1.6em;
+    text-align: center;
+  }
+
+  .keycap span {
+    font-size: 0.86rem;
+    color: var(--paper);
+    opacity: 0.85;
+    white-space: nowrap;
+  }
+
+  /* --------------------------------------------------------------- menace */
+
+  .threat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+  }
+
+  .threat-card {
+    background: var(--surface);
+    padding: 26px 22px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    position: relative;
+  }
+
+  .threat-card .badge {
+    position: absolute;
+    top: 22px; right: 22px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.68rem;
+    color: var(--muted);
+  }
+
+  .threat-mark {
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .threat-mark svg { width: 22px; height: 22px; }
+
+  .threat-card h3 {
+    font-size: 1.9rem;
+    letter-spacing: 0.01em;
+  }
+  .threat-card .appears {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: -8px;
+  }
+
+  .threat-card p {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--paper);
+    opacity: 0.78;
+    margin: 0;
+  }
+
+  .stat-row {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-top: 4px;
+  }
+  .stat-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.66rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+  }
+  .stat-track {
+    flex: 1;
+    height: 4px;
+    background: var(--line);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .stat-fill { height: 100%; border-radius: 2px; }
+
+  /* --------------------------------------------------------------- atelier */
+
+  .atelier-layout {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: clamp(24px, 4vw, 40px);
+    align-items: stretch;
+  }
+
+  .atelier-shot {
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    overflow: hidden;
+    align-self: start;
+  }
+  .atelier-shot img { display: block; width: 100%; }
+
+  .requisition {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .req-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    padding-block: 15px;
+    border-bottom: 1px solid var(--line);
+  }
+  .req-row:first-child { padding-top: 0; }
+  .req-row:last-child { border-bottom: none; }
+
+  .req-name {
+    font-size: 1.02rem;
+    font-weight: 500;
+  }
+  .req-desc {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 400;
+    color: var(--muted);
+    margin-top: 3px;
+  }
+  .req-price {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.85rem;
+    color: var(--sand);
+    white-space: nowrap;
+  }
+
+  /* ------------------------------------------------------------ download */
+
+  .download-panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: clamp(24px, 5vw, 40px);
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+
+  .download-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  .dl-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 20px;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    text-decoration: none;
+    color: var(--paper);
+    background: var(--surface-raised);
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .dl-card:hover { border-color: var(--signal); background: color-mix(in srgb, var(--signal) 7%, var(--surface-raised)); }
+
+  .dl-card.primary {
+    border-color: var(--signal);
+    background: color-mix(in srgb, var(--signal) 10%, var(--surface-raised));
+  }
+
+  .dl-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .dl-os {
+    font-family: "Teko", sans-serif;
+    font-size: 1.5rem;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .dl-pill {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.64rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--void);
+    background: var(--signal);
+    border-radius: 20px;
+    padding: 3px 9px;
+  }
+
+  .dl-meta {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.74rem;
+    color: var(--muted);
+  }
+
+  .dl-cta {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--signal);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .dl-card:not(:hover) .dl-cta { opacity: 0.85; }
+
+  .download-note {
+    display: flex;
+    gap: 12px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+    font-size: 0.86rem;
+    line-height: 1.55;
+    color: var(--muted);
+  }
+  .download-note strong { color: var(--paper); font-weight: 500; }
+  .download-note svg { flex: none; margin-top: 3px; color: var(--sand); }
+
+  /* -------------------------------------------------------------- source */
+
+  .source-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+  }
+
+  .source-copy {
+    max-width: 52ch;
+    color: var(--muted);
+    font-size: 0.92rem;
+    line-height: 1.55;
+  }
+  .source-copy strong { color: var(--paper); font-weight: 500; }
+
+  /* --------------------------------------------------------------- footer */
+
+  footer {
+    padding-block: 28px 40px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 12px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+  footer a { text-decoration: underline; text-underline-offset: 3px; }
+  footer a:hover { color: var(--signal); }
+
+  /* ------------------------------------------------------------ responsive */
+
+  @media (max-width: 760px) {
+    .threat-grid { grid-template-columns: 1fr; }
+    .atelier-layout { grid-template-columns: 1fr; }
+    .download-options { grid-template-columns: 1fr; }
+    .hero-frame { min-height: 92vh; align-items: flex-end; }
+    .topbar .btn-ghost { display: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <div class="topbar" id="topbar">
+    <div class="brand"><span class="dot"></span>Tour de Garde</div>
+    <a class="btn-ghost" href="#telecharger">Telecharger</a>
+  </div>
+
+  <header class="hero">
+    <div class="hero-frame">
+      <img src="assaut.png" alt="Vague 6 en cours : le relais encaisse des tirs, quinze ennemis convergent depuis le desert.">
+      <div class="hero-content">
+        <p class="eyebrow">FPS solo — defense par vagues</p>
+        <h1 class="hero-title">Tour de<br>Garde</h1>
+        <p class="hero-tagline">Un relais au milieu du desert. Toi, une arme, et tout ce que tu peux construire entre deux vagues. Les ennemis ne s'arretent pas — seule la nuit tombe plus vite que ta ferraille ne s'accumule.</p>
+        <div class="hero-actions">
+          <a class="btn-primary" id="cta-primary" href="#">
+            <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 3v10m0 0l-4-4m4 4l4-4M4 15.5h12"/></svg>
+            <span id="cta-primary-label">Telecharger</span>
+          </a>
+          <a class="hero-alt" id="cta-alt" href="#">autre systeme →</a>
+        </div>
+        <div class="hero-meta">
+          <span>Windows · Linux</span>
+          <span>Fichier unique, sans installateur</span>
+          <span>Gratuit</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section id="poste">
+    <div class="section-head">
+      <p class="eyebrow">Le poste</p>
+      <h2>Ce que tu tiens</h2>
+    </div>
+    <p class="pitch">
+      Chaque vague finie te laisse un court <strong>entracte</strong> pour depenser la ferraille recuperee sur les
+      ennemis : une tourelle de plus, un chargeur plus grand, un relais reparti a neuf. Puis ca recommence,
+      un peu plus dur. Les commandes sont lues par leur <strong>position physique</strong> sur le clavier —
+      naturellement ZQSD en AZERTY.
+    </p>
+    <p class="keys-label">Commandes</p>
+    <div class="keyrow">
+      <div class="keycap"><kbd>Z Q S D</kbd><span>Se deplacer</span></div>
+      <div class="keycap"><kbd>&#8226;&#8226;&#8226;</kbd><span>Viser (souris)</span></div>
+      <div class="keycap"><kbd>clic</kbd><span>Tirer</span></div>
+      <div class="keycap"><kbd>espace</kbd><span>Sauter</span></div>
+      <div class="keycap"><kbd>maj</kbd><span>Sprinter</span></div>
+      <div class="keycap"><kbd>R</kbd><span>Recharger</span></div>
+      <div class="keycap"><kbd>tab</kbd><span>Atelier</span></div>
+      <div class="keycap"><kbd>entree</kbd><span>Vague suivante</span></div>
+    </div>
+  </section>
+
+  <section id="menace">
+    <div class="section-head">
+      <p class="eyebrow">Rapport de menace</p>
+      <h2>Ce qui vient du desert</h2>
+      <p>Trois profils identifies. Chacun rejoint la file a une vague donnee et ne la quitte plus — les compositions s'additionnent, elles ne se remplacent pas.</p>
+    </div>
+    <div class="threat-grid">
+
+      <article class="threat-card">
+        <span class="badge">01</span>
+        <div class="threat-mark" style="background:color-mix(in srgb, var(--ember) 18%, var(--surface-raised));">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--ember)" stroke-width="1.6"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c1.2-4.2 4-6 7-6s5.8 1.8 7 6"/></svg>
+        </div>
+        <h3>Rodeur</h3>
+        <p class="appears">Des la vague 1</p>
+        <p>Le gros des troupes. Rien d'exceptionnel seul, mais il arrive en nombre et encaisse suffisamment pour couter des munitions.</p>
+        <div class="stat-row">
+          <div class="stat-line">Vitesse<div class="stat-track"><div class="stat-fill" style="width:45%;background:var(--ember);"></div></div></div>
+          <div class="stat-line">Resistance<div class="stat-track"><div class="stat-fill" style="width:40%;background:var(--ember);"></div></div></div>
+        </div>
+      </article>
+
+      <article class="threat-card">
+        <span class="badge">02</span>
+        <div class="threat-mark" style="background:color-mix(in srgb, var(--sand) 20%, var(--surface-raised));">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--sand)" stroke-width="1.6"><path d="M4 18l7-13 7 13M8 18l3-6 3 6"/></svg>
+        </div>
+        <h3>Traqueur</h3>
+        <p class="appears">Vague 3</p>
+        <p>Rapide et fragile. Deux ou trois balles suffisent — mais il te deborde si tu restes concentre sur autre chose trop longtemps.</p>
+        <div class="stat-row">
+          <div class="stat-line">Vitesse<div class="stat-track"><div class="stat-fill" style="width:88%;background:var(--sand);"></div></div></div>
+          <div class="stat-line">Resistance<div class="stat-track"><div class="stat-fill" style="width:22%;background:var(--sand);"></div></div></div>
+        </div>
+      </article>
+
+      <article class="threat-card">
+        <span class="badge">03</span>
+        <div class="threat-mark" style="background:color-mix(in srgb, var(--signal) 18%, var(--surface-raised));">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--signal)" stroke-width="1.6"><rect x="6" y="5" width="12" height="15" rx="1.5"/><path d="M9 9h6M9 13h6"/></svg>
+        </div>
+        <h3>Colosse</h3>
+        <p class="appears">Vague 5</p>
+        <p>Lent, enorme, et frappe fort au contact. Le laisser approcher le relais sans y consacrer une tourelle est une erreur qui se paie cher.</p>
+        <div class="stat-row">
+          <div class="stat-line">Vitesse<div class="stat-track"><div class="stat-fill" style="width:20%;background:var(--signal);"></div></div></div>
+          <div class="stat-line">Resistance<div class="stat-track"><div class="stat-fill" style="width:95%;background:var(--signal);"></div></div></div>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <section id="atelier">
+    <div class="section-head">
+      <p class="eyebrow">Entre deux vagues</p>
+      <h2>L'atelier</h2>
+      <p>Le seul moment de repit. Depense ta ferraille — mais l'atelier ne met pas la partie en pause : l'ouvrir pendant une vague reste un risque.</p>
+    </div>
+    <div class="atelier-layout">
+      <div class="atelier-shot">
+        <img src="atelier.png" alt="Interface de l'atelier ouverte pendant une vague : cinq ameliorations, prix en ferraille.">
+      </div>
+      <div class="requisition">
+        <div class="req-row">
+          <div><div class="req-name">Tourelle automatique</div><span class="req-desc">Se pose sur un des six socles autour du relais et tire toute seule.</span></div>
+          <div class="req-price">des 150</div>
+        </div>
+        <div class="req-row">
+          <div><div class="req-name">Degats +20%</div><span class="req-desc">Ameliore ton arme. Cumulable.</span></div>
+          <div class="req-price">des 120</div>
+        </div>
+        <div class="req-row">
+          <div><div class="req-name">Reparer le relais</div><span class="req-desc">Rend 200 points de structure.</span></div>
+          <div class="req-price">des 90</div>
+        </div>
+        <div class="req-row">
+          <div><div class="req-name">Chargeur +10</div><span class="req-desc">Dix balles de plus avant de recharger. Cumulable.</span></div>
+          <div class="req-price">des 80</div>
+        </div>
+        <div class="req-row">
+          <div><div class="req-name">Trousse de soin</div><span class="req-desc">Remet ta sante au maximum, immediatement.</span></div>
+          <div class="req-price">des 60</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="telecharger">
+    <div class="section-head">
+      <p class="eyebrow">Installation</p>
+      <h2>Telecharger</h2>
+      <p>Un fichier unique et autonome. Pas d'installateur, pas de compte, pas de launcher — tu le lances comme n'importe quel programme.</p>
+    </div>
+    <div class="download-panel">
+      <div class="download-options">
+        <a class="dl-card" id="dl-windows" href="https://github.com/100zb/tour-de-garde/releases/download/derniere-version/TourDeGarde.exe">
+          <div class="dl-top">
+            <span class="dl-os">Windows</span>
+            <span class="dl-pill" id="pill-windows" hidden>recommande</span>
+          </div>
+          <span class="dl-meta">TourDeGarde.exe &middot; ~80 Mo</span>
+          <span class="dl-cta">Telecharger &rarr;</span>
+        </a>
+        <a class="dl-card" id="dl-linux" href="https://github.com/100zb/tour-de-garde/releases/download/derniere-version/TourDeGarde.x86_64">
+          <div class="dl-top">
+            <span class="dl-os">Linux</span>
+            <span class="dl-pill" id="pill-linux" hidden>recommande</span>
+          </div>
+          <span class="dl-meta">TourDeGarde.x86_64 &middot; ~63 Mo</span>
+          <span class="dl-cta">Telecharger &rarr;</span>
+        </a>
+      </div>
+      <div class="download-note">
+        <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 2l8 4v5c0 4.5-3.2 7.5-8 9-4.8-1.5-8-4.5-8-9V6l8-4z"/></svg>
+        <span><strong>Premier lancement sous Windows :</strong> un avertissement « Windows a protege votre ordinateur »
+        peut apparaitre — normal pour un programme sans signature payante. Clique sur <em>Informations complementaires</em>
+        puis <em>Executer quand meme</em>.</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="source">
+    <div class="source-row">
+      <p class="source-copy">
+        <strong>Code source ouvert.</strong> Fait avec Godot 4 — aucun asset externe, tout le visuel est genere par
+        le moteur. Chaque modification recompile automatiquement les deux versions.
+      </p>
+      <a class="btn-ghost" href="https://github.com/100zb/tour-de-garde" target="_blank" rel="noopener">Voir le depot &rarr;</a>
+    </div>
+  </section>
+
+  <footer>
+    <span>Tour de Garde — projet personnel, sans telemetrie</span>
+    <span><a href="https://github.com/100zb/tour-de-garde" target="_blank" rel="noopener">github.com/100zb/tour-de-garde</a></span>
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var topbar = document.getElementById("topbar");
+  window.addEventListener("scroll", function () {
+    topbar.classList.toggle("scrolled", window.scrollY > 8);
+  }, { passive: true });
+
+  // Detecte l'OS du visiteur pour proposer le bon telechargement en avant,
+  // sans jamais masquer l'autre option.
+  var ua = navigator.userAgent || "";
+  var isWindows = /Windows/i.test(ua);
+  var isLinux = /Linux/i.test(ua) && !/Android/i.test(ua);
+
+  var winUrl = document.getElementById("dl-windows").href;
+  var linUrl = document.getElementById("dl-linux").href;
+
+  var primary = document.getElementById("cta-primary");
+  var primaryLabel = document.getElementById("cta-primary-label");
+  var alt = document.getElementById("cta-alt");
+
+  function setHero(osLabel, primaryUrl, altUrl, altLabel) {
+    primaryLabel.textContent = "Telecharger pour " + osLabel;
+    primary.href = primaryUrl;
+    alt.href = altUrl;
+    alt.textContent = altLabel + " →";
+  }
+
+  if (isLinux) {
+    setHero("Linux", linUrl, winUrl, "version Windows");
+    document.getElementById("pill-linux").hidden = false;
+  } else {
+    // Windows par defaut : c'est le cas le plus frequent pour ce jeu.
+    setHero("Windows", winUrl, linUrl, "version Linux");
+    document.getElementById("pill-windows").hidden = false;
+  }
+})();
+</script>
+</body>
+</html>
