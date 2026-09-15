@@ -1,0 +1,37 @@
+; Tour de Garde - configuration du projet Godot 4
+
+config_version=5
+
+[application]
+
+config/name="Tour de Garde"
+config/description="Defends ton relais au milieu du desert. Des vagues d'ennemis arrivent. Tu tires, tu ramasses de la ferraille, tu ameliores."
+run/main_scene="res://scenes/main.tscn"
+config/features=PackedStringArray("4.3", "Forward Plus")
+config/icon="res://icon.svg"
+
+[autoload]
+
+Game="*res://scripts/game.gd"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+
+[layer_names]
+
+3d_physics/layer_1="monde"
+3d_physics/layer_2="joueur"
+3d_physics/layer_3="ennemi"
+3d_physics/layer_4="relais"
+
+[physics]
+
+3d/default_gravity=18.0
+
+[rendering]
+
+anti_aliasing/quality/msaa_3d=2
+environment/defaults/default_clear_color=Color(0.35, 0.28, 0.2, 1)

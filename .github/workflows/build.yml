@@ -1,0 +1,67 @@
+name: Compilation du jeu
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  GODOT_VERSION: "4.3"
+
+jobs:
+  build:
+    name: Windows et Linux
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installer Godot et les modeles d'export
+        run: |
+          set -euo pipefail
+          BASE="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable"
+          curl -fsSL -o godot.zip "${BASE}/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          curl -fsSL -o templates.tpz "${BASE}/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          unzip -q godot.zip
+          sudo mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" /usr/local/bin/godot
+          sudo chmod +x /usr/local/bin/godot
+          unzip -q templates.tpz
+          mkdir -p "${HOME}/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          mv templates/* "${HOME}/.local/share/godot/export_templates/${GODOT_VERSION}.stable/"
+
+      - name: Importer les ressources
+        run: godot --headless --path . --import
+
+      # Godot peut renvoyer un code d'erreur pour de simples avertissements :
+      # on verifie donc que le fichier attendu existe vraiment.
+      - name: Exporter la version Windows
+        run: |
+          mkdir -p build/windows
+          godot --headless --path . --export-release "Windows Desktop" "${PWD}/build/windows/TourDeGarde.exe" || true
+          test -f build/windows/TourDeGarde.exe
+
+      - name: Exporter la version Linux
+        run: |
+          mkdir -p build/linux
+          godot --headless --path . --export-release "Linux" "${PWD}/build/linux/TourDeGarde.x86_64" || true
+          test -f build/linux/TourDeGarde.x86_64
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TourDeGarde-Windows
+          path: build/windows/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TourDeGarde-Linux
+          path: build/linux/
+
+      # Un tag "v1.0" publie une Release avec les fichiers a telecharger.
+      - name: Publier la Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            build/windows/TourDeGarde.exe
+            build/linux/TourDeGarde.x86_64
