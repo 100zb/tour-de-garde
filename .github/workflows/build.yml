@@ -10,6 +10,9 @@ on:
 env:
   GODOT_VERSION: "4.3"
 
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Windows et Linux
@@ -57,11 +60,24 @@ jobs:
           name: TourDeGarde-Linux
           path: build/linux/
 
-      # Un tag "v1.0" publie une Release avec les fichiers a telecharger.
-      - name: Publier la Release
-        if: startsWith(github.ref, 'refs/tags/v')
+      # Chaque push sur main qui compile avec succes met a jour une unique
+      # Release "derniere-version" : un seul lien stable a partager, jamais
+      # besoin de creer un tag a la main. softprops/action-gh-release est
+      # idempotent sur tag_name : il met a jour la Release existante au lieu
+      # d'en recreer une, donc le lien de telechargement ne change jamais.
+      - name: Publier / mettre a jour la Release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: derniere-version
+          name: "Tour de Garde"
+          body: |
+            Derniere version compilee automatiquement depuis `main`
+            (commit ${{ github.sha }}).
+
+            Telecharge le fichier pour ton systeme, double-clique, et joue.
+            Rien d'autre a installer.
+          make_latest: true
           files: |
             build/windows/TourDeGarde.exe
             build/linux/TourDeGarde.x86_64
