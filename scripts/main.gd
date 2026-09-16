@@ -28,6 +28,7 @@ func _ready() -> void:
 	_scatter_ruins()
 	_bake_navigation()
 	_decorate_relay_surroundings()
+	_scatter_bushes()
 	Game.announce("Defends le relais. Tab pour l'atelier.")
 
 func _unhandled_input(_event: InputEvent) -> void:
@@ -254,6 +255,55 @@ func _bake_navigation() -> void:
 	nav_mesh.cell_height = 0.25
 	$NavigationRegion3D.navigation_mesh = nav_mesh
 	$NavigationRegion3D.bake_navigation_mesh()
+
+## Ajoute des buissons secs (vegetation morte) : des bouquets de branches
+## fines, inclinees et tournees aleatoirement pour un aspect broussailleux.
+## Purement decoratif, sans collision, en dehors du NavigationRegion3D (pas
+## d'impact sur le maillage de navigation). Meme logique d'exclusion de
+## l'anneau de spawn que les rochers/ruines.
+func _scatter_bushes() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 20260917
+
+	var bushes := Node3D.new()
+	bushes.name = "Bushes"
+	add_child(bushes)
+
+	var material := StandardMaterial3D.new()
+	material.albedo_color = Color(0.42, 0.36, 0.28)
+	material.roughness = 1.0
+
+	for i in 40:
+		var angle := rng.randf() * TAU
+		var distance := rng.randf_range(14.0, 90.0)
+		while absf(distance - ENEMY_SPAWN_RADIUS) < SPAWN_EXCLUSION_MARGIN:
+			distance = rng.randf_range(14.0, 90.0)
+
+		var pos_x := cos(angle) * distance
+		var pos_z := sin(angle) * distance
+		var ground_y: float = $NavigationRegion3D/Ground.get_height(pos_x, pos_z)
+
+		var bush := Node3D.new()
+		bush.position = Vector3(pos_x, ground_y, pos_z)
+		bush.rotation.y = rng.randf() * TAU
+		bushes.add_child(bush)
+
+		var branch_count := rng.randi_range(4, 6)
+		for b in branch_count:
+			var length := rng.randf_range(0.35, 0.75)
+			var branch := MeshInstance3D.new()
+			var box := BoxMesh.new()
+			box.size = Vector3(0.05, length, 0.05)
+			branch.mesh = box
+			branch.material_override = material
+
+			var lean := deg_to_rad(rng.randf_range(20.0, 55.0))
+			var spin := rng.randf() * TAU
+			branch.rotation = Vector3(lean, spin, 0.0)
+			# La branche part du sol (pivot du buisson) et s'etend vers le
+			# haut le long de son propre axe local, apres inclinaison.
+			branch.position = branch.transform.basis.y * (length * 0.5)
+			bush.add_child(branch)
 
 ## Ajoute des elements visuels simples autour du relais : une dalle au sol,
 ## un anneau de renfort sur le fut, et un socle visible sous chaque
