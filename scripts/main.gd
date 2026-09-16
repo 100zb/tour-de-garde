@@ -137,6 +137,12 @@ func _restart() -> void:
 
 # --------------------------------------------------------------------- decor
 
+## Rayon de l'anneau de spawn des ennemis (doit rester synchronise avec
+## SPAWN_RADIUS dans wave_manager.gd) et marge de securite pour qu'aucun
+## rocher ni ruine n'empiete dessus.
+const ENEMY_SPAWN_RADIUS := 48.0
+const SPAWN_EXCLUSION_MARGIN := 6.0
+
 ## Seme des rochers autour de l'arene pour donner du relief et des abris.
 ## Graine fixe : le terrain est identique a chaque partie.
 func _scatter_rocks() -> void:
@@ -150,6 +156,8 @@ func _scatter_rocks() -> void:
 	for i in 70:
 		var angle := rng.randf() * TAU
 		var distance := rng.randf_range(16.0, 95.0)
+		while absf(distance - ENEMY_SPAWN_RADIUS) < SPAWN_EXCLUSION_MARGIN:
+			distance = rng.randf_range(16.0, 95.0)
 		var width := rng.randf_range(1.2, 4.5)
 		var height := rng.randf_range(0.8, 3.6)
 		var depth := rng.randf_range(1.2, 4.5)
@@ -197,6 +205,8 @@ func _scatter_ruins() -> void:
 	for i in 10:
 		var angle := rng.randf() * TAU
 		var distance := rng.randf_range(26.0, 88.0)
+		while absf(distance - ENEMY_SPAWN_RADIUS) < SPAWN_EXCLUSION_MARGIN:
+			distance = rng.randf_range(26.0, 88.0)
 		var width := rng.randf_range(5.0, 9.0)
 		var height := rng.randf_range(2.2, 3.8)
 		var thickness := rng.randf_range(0.8, 1.3)
