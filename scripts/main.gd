@@ -21,7 +21,9 @@ func _ready() -> void:
 	relay.destroyed.connect(_on_relay_destroyed)
 	# Orientation du soleil reglee ici plutot que dans la scene : une matrice
 	# ecrite a la main est illisible et facile a se tromper.
-	$Sun.rotation_degrees = Vector3(-46.0, -52.0, 0.0)
+	# Angle bas (proche de l'horizon) pour une ambiance crepuscule/tempete
+	# de sable plutot que plein jour neutre.
+	$Sun.rotation_degrees = Vector3(-22.0, -52.0, 0.0)
 	_scatter_rocks()
 	_scatter_ruins()
 	_bake_navigation()
