@@ -1,0 +1,26 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/pistol/service_pistol_2k.gltf" id="1_pistol"]
+
+[node name="WeaponView" instance=ExtResource("1_pistol")]
+
+[node name="service_pistol_magazine_loaded" parent="."]
+visible = false
+
+[node name="service_pistol_magazine_empty" parent="."]
+visible = false
+
+[node name="service_pistol_bullet" parent="."]
+visible = false
+
+[node name="service_pistol_pistol_b" parent="."]
+visible = false
+
+[node name="service_pistol_slide_b" parent="."]
+visible = false
+
+[node name="service_pistol_hammer_b" parent="."]
+visible = false
+
+[node name="service_pistol_trigger_b" parent="."]
+visible = false

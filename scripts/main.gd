@@ -3,6 +3,12 @@ extends Node3D
 ## le HUD et la boutique, et gere les achats, la defaite et le redemarrage.
 
 const TURRET_SCENE := preload("res://scenes/turret.tscn")
+const BOULDER_SCENE := preload("res://assets/models/boulder/boulder_01_2k.gltf")
+# AABB reel du maillage (source: Poly Haven boulder_01), utilise pour
+# dimensionner/centrer la collision proportionnellement a l'echelle
+# aleatoire appliquee a chaque rocher.
+const BOULDER_SIZE := Vector3(1.272136, 1.00383, 1.830334)
+const BOULDER_CENTER := Vector3(-0.112092, 0.428272, -0.033273)
 
 @onready var player: Player = $Player
 @onready var relay: Relay = $NavigationRegion3D/Relay
@@ -147,6 +153,8 @@ const ENEMY_SPAWN_RADIUS := 48.0
 const SPAWN_EXCLUSION_MARGIN := 6.0
 
 ## Seme des rochers autour de l'arene pour donner du relief et des abris.
+## Utilise le vrai maillage scanne (Poly Haven, CC0) plutot qu'une boite,
+## avec une echelle aleatoire par rocher pour varier les tailles.
 ## Graine fixe : le terrain est identique a chaque partie.
 func _scatter_rocks() -> void:
 	var rng := RandomNumberGenerator.new()
@@ -161,9 +169,7 @@ func _scatter_rocks() -> void:
 		var distance := rng.randf_range(16.0, 95.0)
 		while absf(distance - ENEMY_SPAWN_RADIUS) < SPAWN_EXCLUSION_MARGIN:
 			distance = rng.randf_range(16.0, 95.0)
-		var width := rng.randf_range(1.2, 4.5)
-		var height := rng.randf_range(0.8, 3.6)
-		var depth := rng.randf_range(1.2, 4.5)
+		var scale_factor := rng.randf_range(0.5, 2.0)
 
 		var pos_x := cos(angle) * distance
 		var pos_z := sin(angle) * distance
@@ -172,25 +178,20 @@ func _scatter_rocks() -> void:
 		var body := StaticBody3D.new()
 		body.collision_layer = 1
 		body.collision_mask = 0
-		body.position = Vector3(pos_x, ground_y + height * 0.4, pos_z)
+		# Le pivot du maillage est proche de sa base : le poser a hauteur du
+		# sol suffit a l'ancrer naturellement (leger enfoncement realiste).
+		body.position = Vector3(pos_x, ground_y, pos_z)
 		body.rotation.y = rng.randf() * TAU
 		rocks.add_child(body)
 
-		var mesh_instance := MeshInstance3D.new()
-		var box := BoxMesh.new()
-		box.size = Vector3(width, height, depth)
-		mesh_instance.mesh = box
-
-		var material := StandardMaterial3D.new()
-		var shade := rng.randf_range(0.34, 0.52)
-		material.albedo_color = Color(shade, shade * 0.86, shade * 0.68)
-		material.roughness = 0.95
-		mesh_instance.material_override = material
-		body.add_child(mesh_instance)
+		var boulder := BOULDER_SCENE.instantiate()
+		boulder.scale = Vector3.ONE * scale_factor
+		body.add_child(boulder)
 
 		var collision := CollisionShape3D.new()
 		var shape := BoxShape3D.new()
-		shape.size = Vector3(width, height, depth)
+		shape.size = BOULDER_SIZE * scale_factor
+		collision.position = BOULDER_CENTER * scale_factor
 		collision.shape = shape
 		body.add_child(collision)
 
