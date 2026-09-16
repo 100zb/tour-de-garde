@@ -96,7 +96,12 @@ func _on_purchase_requested(id: String) -> void:
 
 func _free_pad() -> Node3D:
 	for pad in turret_pads.get_children():
-		if pad.get_child_count() == 0:
+		var has_turret := false
+		for child in pad.get_children():
+			if child.name != "PadDecor":
+				has_turret = true
+				break
+		if not has_turret:
 			return pad
 	return null
 
@@ -290,6 +295,7 @@ func _decorate_relay_surroundings() -> void:
 
 	for pad in turret_pads.get_children():
 		var pad_disc := MeshInstance3D.new()
+		pad_disc.name = "PadDecor"
 		pad_disc.mesh = pad_mesh
 		pad_disc.material_override = pad_material
 		pad_disc.position = Vector3(0.0, 0.08, 0.0)
