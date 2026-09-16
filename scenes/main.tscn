@@ -73,6 +73,28 @@ height = 2.5
 radius = 3.0
 height = 9.0
 
+[sub_resource type="ParticleProcessMaterial" id="DustProcess"]
+emission_shape = 1
+emission_box_extents = Vector3(110, 9, 110)
+direction = Vector3(0.8, 0, 0.6)
+spread = 25.0
+gravity = Vector3(0, -0.02, 0)
+initial_velocity_min = 0.4
+initial_velocity_max = 1.2
+damping_min = 0.05
+damping_max = 0.05
+scale_min = 0.6
+scale_max = 1.4
+
+[sub_resource type="QuadMesh" id="DustMesh"]
+size = Vector2(0.12, 0.12)
+
+[sub_resource type="StandardMaterial3D" id="DustMaterial"]
+transparency = 1
+shading_mode = 0
+billboard_mode = 1
+albedo_color = Color(0.85, 0.7, 0.48, 0.35)
+
 [node name="Main" type="Node3D"]
 script = ExtResource("1_main")
 
@@ -85,6 +107,17 @@ light_color = Color(1, 0.78, 0.52, 1)
 light_energy = 1.05
 shadow_enabled = true
 directional_shadow_max_distance = 120.0
+
+[node name="Dust" type="GPUParticles3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 9, 0)
+amount = 220
+lifetime = 14.0
+preprocess = 14.0
+randomness = 1.0
+visibility_aabb = AABB(-110, -11, -110, 220, 22, 220)
+draw_pass_1 = SubResource("DustMesh")
+material_override = SubResource("DustMaterial")
+process_material = SubResource("DustProcess")
 
 [node name="NavigationRegion3D" type="NavigationRegion3D" parent="."]
 
