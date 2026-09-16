@@ -71,8 +71,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if is_dead:
 		return
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
-		rotate_y(-event.relative.x * MOUSE_SENSITIVITY)
-		head.rotate_x(-event.relative.y * MOUSE_SENSITIVITY)
+		var sensitivity := MOUSE_SENSITIVITY * Game.mouse_sensitivity
+		rotate_y(-event.relative.x * sensitivity)
+		head.rotate_x(-event.relative.y * sensitivity)
 		head.rotation.x = clampf(head.rotation.x, -PITCH_LIMIT, PITCH_LIMIT)
 
 func _physics_process(delta: float) -> void:

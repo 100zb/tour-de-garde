@@ -34,8 +34,51 @@ var damage_multiplier: float = 1.0
 var bonus_magazine: int = 0
 var turrets_built: int = 0
 
+# --------------------------------------------------------------- options
+## Preferences utilisateur (menu Options) : persistantes entre les parties
+## et entre les lancements du jeu, contrairement au reste de cet etat.
+const SETTINGS_PATH := "user://settings.cfg"
+const MIN_MOUSE_SENSITIVITY := 0.2
+const MAX_MOUSE_SENSITIVITY := 3.0
+
+var mouse_sensitivity: float = 1.0
+var fullscreen: bool = false
+
 func _enter_tree() -> void:
 	_register_inputs()
+	_load_settings()
+
+func _load_settings() -> void:
+	var config := ConfigFile.new()
+	if config.load(SETTINGS_PATH) != OK:
+		return
+	mouse_sensitivity = clampf(
+		config.get_value("options", "mouse_sensitivity", 1.0),
+		MIN_MOUSE_SENSITIVITY,
+		MAX_MOUSE_SENSITIVITY
+	)
+	fullscreen = config.get_value("options", "fullscreen", false)
+	_apply_fullscreen()
+
+func save_settings() -> void:
+	var config := ConfigFile.new()
+	config.set_value("options", "mouse_sensitivity", mouse_sensitivity)
+	config.set_value("options", "fullscreen", fullscreen)
+	config.save(SETTINGS_PATH)
+
+func set_mouse_sensitivity(value: float) -> void:
+	mouse_sensitivity = clampf(value, MIN_MOUSE_SENSITIVITY, MAX_MOUSE_SENSITIVITY)
+
+func set_fullscreen(value: bool) -> void:
+	fullscreen = value
+	_apply_fullscreen()
+	save_settings()
+
+func _apply_fullscreen() -> void:
+	if DisplayServer.get_name() == "headless":
+		return
+	var mode := DisplayServer.WINDOW_MODE_FULLSCREEN if fullscreen else DisplayServer.WINDOW_MODE_WINDOWED
+	DisplayServer.window_set_mode(mode)
 
 func _register_inputs() -> void:
 	for action_name in KEY_BINDINGS:

@@ -6,7 +6,7 @@ config_version=5
 
 config/name="Tour de Garde"
 config/description="Defends ton relais au milieu du desert. Des vagues d'ennemis arrivent. Tu tires, tu ramasses de la ferraille, tu ameliores."
-run/main_scene="res://scenes/main.tscn"
+run/main_scene="res://scenes/main_menu.tscn"
 config/features=PackedStringArray("4.3", "Forward Plus")
 config/icon="res://icon.svg"
 
