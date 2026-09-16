@@ -3,6 +3,9 @@
 /android/
 export_presets.cfg.local
 
+# Images de la page web : pas des assets Godot, jamais de metadonnees d'import
+docs/*.import
+
 # Builds
 build/
 *.exe

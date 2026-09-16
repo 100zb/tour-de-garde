@@ -23,6 +23,7 @@ func _ready() -> void:
 	# ecrite a la main est illisible et facile a se tromper.
 	$Sun.rotation_degrees = Vector3(-46.0, -52.0, 0.0)
 	_scatter_rocks()
+	_bake_navigation()
 	Game.announce("Defends le relais. Tab pour l'atelier.")
 
 func _unhandled_input(_event: InputEvent) -> void:
@@ -170,3 +171,16 @@ func _scatter_rocks() -> void:
 		shape.size = Vector3(width, height, depth)
 		collision.shape = shape
 		body.add_child(collision)
+
+## Cree le maillage de navigation utilise par les ennemis pour se deplacer.
+## A relancer (rebake) plus tard si des obstacles sont ajoutes sur le terrain.
+func _bake_navigation() -> void:
+	var nav_mesh := NavigationMesh.new()
+	nav_mesh.agent_radius = 0.8
+	nav_mesh.agent_height = 2.2
+	# Doit correspondre a la cellule de la carte de navigation par defaut du
+	# moteur (0.25/0.25) : un decalage fait echouer la synchronisation.
+	nav_mesh.cell_size = 0.25
+	nav_mesh.cell_height = 0.25
+	$NavigationRegion3D.navigation_mesh = nav_mesh
+	$NavigationRegion3D.bake_navigation_mesh()

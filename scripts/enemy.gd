@@ -15,6 +15,9 @@ const SEPARATION_RANGE := 1.8
 const ACCELERATION := 8.0
 
 @onready var mesh: MeshInstance3D = $Mesh
+@onready var nav_agent: NavigationAgent3D = $NavigationAgent3D
+
+const NAV_UPDATE_INTERVAL := 0.25
 
 var kind: Kind = Kind.RODEUR
 var max_health: float = 40.0
@@ -24,6 +27,7 @@ var damage: float = 8.0
 var scrap_value: int = 12
 
 var _attack_cooldown := 0.0
+var _nav_update_timer := 0.0
 var _relay: Node3D
 var _player: Node3D
 var _material: StandardMaterial3D
@@ -90,10 +94,13 @@ func _physics_process(delta: float) -> void:
 		velocity.z = move_toward(velocity.z, 0.0, ACCELERATION * speed * delta)
 		_try_attack(target)
 	else:
-		var desired := to_target.normalized() * speed + _separation()
+		_update_navigation(target, delta)
+		var to_next_point := nav_agent.get_next_path_position() - global_position
+		to_next_point.y = 0.0
+		var desired := to_next_point.normalized() * speed + _separation()
 		velocity.x = move_toward(velocity.x, desired.x, ACCELERATION * speed * delta)
 		velocity.z = move_toward(velocity.z, desired.z, ACCELERATION * speed * delta)
-		_face(to_target)
+		_face(to_next_point)
 
 	if not is_on_floor():
 		velocity.y -= ProjectSettings.get_setting("physics/3d/default_gravity", 18.0) * delta
@@ -101,6 +108,14 @@ func _physics_process(delta: float) -> void:
 		velocity.y = 0.0
 
 	move_and_slide()
+
+## Redonne sa cible au pathfinding de temps en temps (pas chaque frame,
+## pour rester leger avec beaucoup d'ennemis) et avance sur le chemin calcule.
+func _update_navigation(target: Node3D, delta: float) -> void:
+	_nav_update_timer -= delta
+	if _nav_update_timer <= 0.0:
+		_nav_update_timer = NAV_UPDATE_INTERVAL
+		nav_agent.target_position = target.global_position
 
 func _pick_target() -> Node3D:
 	var player_alive: bool = is_instance_valid(_player) and not _player.is_dead

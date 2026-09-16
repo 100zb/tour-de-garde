@@ -37,3 +37,8 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, -0.4)
 mesh = SubResource("Mesh_eye")
 material_override = SubResource("Mat_eye")
 cast_shadow = 0
+
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+path_desired_distance = 1.0
+target_desired_distance = 1.5
+avoidance_enabled = false
