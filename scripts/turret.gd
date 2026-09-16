@@ -6,6 +6,8 @@ class_name Turret
 const RANGE := 30.0
 const FIRE_INTERVAL := 0.55
 const DAMAGE := 20.0
+## Rochers, murs en ruine et sol : ce que la ligne de tir ne doit pas traverser.
+const OBSTACLE_MASK := 1
 
 @onready var head: Node3D = $Head
 @onready var barrel: Node3D = $Head/Barrel
@@ -37,10 +39,20 @@ func _nearest_enemy() -> Enemy:
 		if enemy == null:
 			continue
 		var distance := global_position.distance_to(enemy.global_position)
-		if distance < best_distance:
+		if distance < best_distance and _has_line_of_sight(enemy):
 			best_distance = distance
 			best = enemy
 	return best
+
+## Vrai si rien (rocher, mur en ruine, terrain) ne coupe la ligne entre le
+## canon et l'ennemi vise.
+func _has_line_of_sight(enemy: Enemy) -> bool:
+	var from := barrel.global_position
+	var to := enemy.global_position + Vector3.UP
+	var query := PhysicsRayQueryParameters3D.create(from, to)
+	query.collision_mask = OBSTACLE_MASK
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	return hit.is_empty()
 
 func _aim_at(point: Vector3) -> void:
 	var flat := point
