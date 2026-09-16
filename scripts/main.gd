@@ -23,6 +23,7 @@ func _ready() -> void:
 	# ecrite a la main est illisible et facile a se tromper.
 	$Sun.rotation_degrees = Vector3(-46.0, -52.0, 0.0)
 	_scatter_rocks()
+	_scatter_ruins()
 	_bake_navigation()
 	Game.announce("Defends le relais. Tab pour l'atelier.")
 
@@ -138,7 +139,7 @@ func _scatter_rocks() -> void:
 
 	var rocks := Node3D.new()
 	rocks.name = "Rocks"
-	add_child(rocks)
+	$NavigationRegion3D.add_child(rocks)
 
 	for i in 70:
 		var angle := rng.randf() * TAU
@@ -169,6 +170,49 @@ func _scatter_rocks() -> void:
 		var collision := CollisionShape3D.new()
 		var shape := BoxShape3D.new()
 		shape.size = Vector3(width, height, depth)
+		collision.shape = shape
+		body.add_child(collision)
+
+## Ajoute des pans de mur en ruine : de vrais obstacles que les ennemis
+## doivent contourner (inclus dans le maillage de navigation, voir
+## _bake_navigation()).
+func _scatter_ruins() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 20260916
+
+	var ruins := Node3D.new()
+	ruins.name = "Ruins"
+	$NavigationRegion3D.add_child(ruins)
+
+	for i in 10:
+		var angle := rng.randf() * TAU
+		var distance := rng.randf_range(26.0, 88.0)
+		var width := rng.randf_range(5.0, 9.0)
+		var height := rng.randf_range(2.2, 3.8)
+		var thickness := rng.randf_range(0.8, 1.3)
+
+		var body := StaticBody3D.new()
+		body.collision_layer = 1
+		body.collision_mask = 0
+		body.position = Vector3(cos(angle) * distance, height * 0.5, sin(angle) * distance)
+		body.rotation.y = rng.randf() * TAU
+		ruins.add_child(body)
+
+		var mesh_instance := MeshInstance3D.new()
+		var box := BoxMesh.new()
+		box.size = Vector3(width, height, thickness)
+		mesh_instance.mesh = box
+
+		var material := StandardMaterial3D.new()
+		var shade := rng.randf_range(0.55, 0.68)
+		material.albedo_color = Color(shade, shade * 0.94, shade * 0.82)
+		material.roughness = 1.0
+		mesh_instance.material_override = material
+		body.add_child(mesh_instance)
+
+		var collision := CollisionShape3D.new()
+		var shape := BoxShape3D.new()
+		shape.size = Vector3(width, height, thickness)
 		collision.shape = shape
 		body.add_child(collision)
 
