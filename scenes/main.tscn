@@ -100,32 +100,32 @@ material_override = SubResource("Mat_ground")
 [node name="GroundCollision" type="CollisionShape3D" parent="NavigationRegion3D/Ground"]
 shape = SubResource("Shape_ground")
 
-[node name="Relay" type="StaticBody3D" parent="." groups=["relay"]]
+[node name="Relay" type="StaticBody3D" parent="NavigationRegion3D" groups=["relay"]]
 collision_layer = 8
 collision_mask = 0
 script = ExtResource("3_relay")
 
-[node name="RelayCollision" type="CollisionShape3D" parent="Relay"]
+[node name="RelayCollision" type="CollisionShape3D" parent="NavigationRegion3D/Relay"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.5, 0)
 shape = SubResource("Shape_relay")
 
-[node name="BaseMesh" type="MeshInstance3D" parent="Relay"]
+[node name="BaseMesh" type="MeshInstance3D" parent="NavigationRegion3D/Relay"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 mesh = SubResource("Mesh_relay_base")
 material_override = SubResource("Mat_relay")
 
-[node name="TowerMesh" type="MeshInstance3D" parent="Relay"]
+[node name="TowerMesh" type="MeshInstance3D" parent="NavigationRegion3D/Relay"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.4, 0)
 mesh = SubResource("Mesh_relay_tower")
 material_override = SubResource("Mat_relay")
 
-[node name="Core" type="MeshInstance3D" parent="Relay"]
+[node name="Core" type="MeshInstance3D" parent="NavigationRegion3D/Relay"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 8.6, 0)
 mesh = SubResource("Mesh_relay_core")
 material_override = SubResource("Mat_core")
 cast_shadow = 0
 
-[node name="CoreLight" type="OmniLight3D" parent="Relay"]
+[node name="CoreLight" type="OmniLight3D" parent="NavigationRegion3D/Relay"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 8.6, 0)
 light_color = Color(0.4, 0.8, 1, 1)
 light_energy = 2.5

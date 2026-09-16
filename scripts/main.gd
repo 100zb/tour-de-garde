@@ -5,7 +5,7 @@ extends Node3D
 const TURRET_SCENE := preload("res://scenes/turret.tscn")
 
 @onready var player: Player = $Player
-@onready var relay: Relay = $Relay
+@onready var relay: Relay = $NavigationRegion3D/Relay
 @onready var waves: WaveManager = $WaveManager
 @onready var hud: HUD = $HUD
 @onready var shop: Shop = $ShopLayer/Shop
