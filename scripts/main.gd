@@ -10,6 +10,22 @@ const BOULDER_SCENE := preload("res://assets/models/boulder/boulder_01_2k.gltf")
 const BOULDER_SIZE := Vector3(1.272136, 1.00383, 1.830334)
 const BOULDER_CENTER := Vector3(-0.112092, 0.428272, -0.033273)
 
+const FORT_SCENE := preload("res://assets/models/fort/modular_fort_01_2k.gltf")
+# Sous-ensemble du kit modulaire (Poly Haven) utilise comme fragments de
+# ruine : murs droits/coins en deux epaisseurs, un pan casse net et une
+# tour ronde, pour varier les silhouettes sans importer les 22 pieces.
+const FORT_PIECE_NAMES := [
+	"modular_fort_01_wall_thick_straight_01",
+	"modular_fort_01_wall_thick_corner_01",
+	"modular_fort_01_wall_thick_end_01",
+	"modular_fort_01_wall_thin_straight_01",
+	"modular_fort_01_wall_thin_corner_01",
+	"modular_fort_01_tower_round",
+]
+# Echelle reduite : les pieces du kit sont a l'echelle d'un vrai fortin
+# (jusqu'a 14 m de long, 13 m de haut), trop imposantes telles quelles.
+const FORT_SCALE := 0.55
+
 @onready var player: Player = $Player
 @onready var relay: Relay = $NavigationRegion3D/Relay
 @onready var waves: WaveManager = $WaveManager
@@ -195,9 +211,10 @@ func _scatter_rocks() -> void:
 		collision.shape = shape
 		body.add_child(collision)
 
-## Ajoute des pans de mur en ruine : de vrais obstacles que les ennemis
-## doivent contourner (inclus dans le maillage de navigation, voir
-## _bake_navigation()).
+## Ajoute des fragments de fortin en ruine (kit modulaire Poly Haven) :
+## de vrais obstacles que les ennemis doivent contourner (inclus dans le
+## maillage de navigation, voir _bake_navigation()). Le pack fourni n'a
+## pas ses textures : couleurs pierre/mortier appliquees a la main.
 func _scatter_ruins() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 20260916
@@ -206,41 +223,54 @@ func _scatter_ruins() -> void:
 	ruins.name = "Ruins"
 	$NavigationRegion3D.add_child(ruins)
 
+	# Extrait les maillages voulus depuis le kit (une seule instance
+	# temporaire) pour les reutiliser sur toutes les copies dispersees.
+	var fort := FORT_SCENE.instantiate()
+	var piece_meshes: Array[Mesh] = []
+	for piece_name in FORT_PIECE_NAMES:
+		var piece: MeshInstance3D = fort.get_node(piece_name)
+		piece_meshes.append(piece.mesh)
+	fort.free()
+
+	var wall_material := StandardMaterial3D.new()
+	wall_material.albedo_color = Color(0.58, 0.52, 0.44)
+	wall_material.roughness = 1.0
+
+	var trim_material := StandardMaterial3D.new()
+	trim_material.albedo_color = Color(0.4, 0.35, 0.3)
+	trim_material.roughness = 1.0
+
 	for i in 10:
 		var angle := rng.randf() * TAU
 		var distance := rng.randf_range(26.0, 88.0)
 		while absf(distance - ENEMY_SPAWN_RADIUS) < SPAWN_EXCLUSION_MARGIN:
 			distance = rng.randf_range(26.0, 88.0)
-		var width := rng.randf_range(5.0, 9.0)
-		var height := rng.randf_range(2.2, 3.8)
-		var thickness := rng.randf_range(0.8, 1.3)
 
 		var pos_x := cos(angle) * distance
 		var pos_z := sin(angle) * distance
 		var ground_y: float = $NavigationRegion3D/Ground.get_height(pos_x, pos_z)
 
+		var mesh: Mesh = piece_meshes[rng.randi_range(0, piece_meshes.size() - 1)]
+		var mesh_aabb := mesh.get_aabb()
+
 		var body := StaticBody3D.new()
 		body.collision_layer = 1
 		body.collision_mask = 0
-		body.position = Vector3(pos_x, ground_y + height * 0.5, pos_z)
+		body.position = Vector3(pos_x, ground_y, pos_z)
 		body.rotation.y = rng.randf() * TAU
+		body.scale = Vector3.ONE * FORT_SCALE
 		ruins.add_child(body)
 
 		var mesh_instance := MeshInstance3D.new()
-		var box := BoxMesh.new()
-		box.size = Vector3(width, height, thickness)
-		mesh_instance.mesh = box
-
-		var material := StandardMaterial3D.new()
-		var shade := rng.randf_range(0.55, 0.68)
-		material.albedo_color = Color(shade, shade * 0.94, shade * 0.82)
-		material.roughness = 1.0
-		mesh_instance.material_override = material
+		mesh_instance.mesh = mesh
+		mesh_instance.set_surface_override_material(0, wall_material)
+		mesh_instance.set_surface_override_material(1, trim_material)
 		body.add_child(mesh_instance)
 
 		var collision := CollisionShape3D.new()
 		var shape := BoxShape3D.new()
-		shape.size = Vector3(width, height, thickness)
+		shape.size = mesh_aabb.size
+		collision.position = mesh_aabb.position + mesh_aabb.size * 0.5
 		collision.shape = shape
 		body.add_child(collision)
 

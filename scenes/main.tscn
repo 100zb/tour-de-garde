@@ -12,8 +12,8 @@
 sky_top_color = Color(0.32, 0.24, 0.34, 1)
 sky_horizon_color = Color(0.95, 0.58, 0.32, 1)
 sky_curve = 0.15
-ground_bottom_color = Color(0.3, 0.22, 0.16, 1)
-ground_horizon_color = Color(0.82, 0.55, 0.34, 1)
+ground_bottom_color = Color(0.7, 0.46, 0.28, 1)
+ground_horizon_color = Color(0.95, 0.58, 0.32, 1)
 sun_angle_max = 18.0
 sun_curve = 0.12
 

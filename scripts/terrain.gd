@@ -40,9 +40,12 @@ func _ready() -> void:
 
 	# Le relief a change la forme du sol : il faut recalculer les normales
 	# pour que la lumiere ne reste pas plaquee comme sur un plan plat.
+	# Les tangentes sont necessaires pour que la normal map du sable
+	# (relief des grains) s'applique correctement.
 	var surface_tool := SurfaceTool.new()
 	surface_tool.create_from(array_mesh, 0)
 	surface_tool.generate_normals()
+	surface_tool.generate_tangents()
 	var final_mesh := surface_tool.commit()
 
 	mesh_instance.mesh = final_mesh
@@ -63,8 +66,17 @@ func _height_at(x: float, z: float, noise: FastNoiseLite) -> float:
 func get_height(x: float, z: float) -> float:
 	return _height_at(x, z, _noise)
 
+## Repetitions de la texture sur les 400m du terrain : plus haut = grain
+## plus visible de pres, au prix de plus de repetition au loin.
+const SAND_TILING := 70.0
+
 func _sand_material() -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()
-	material.albedo_color = Color(0.72, 0.58, 0.38)
-	material.roughness = 0.95
+	material.albedo_texture = load("res://assets/textures/sand/sand_color.jpg")
+	material.roughness_texture = load("res://assets/textures/sand/sand_roughness.jpg")
+	material.ao_enabled = true
+	material.ao_texture = load("res://assets/textures/sand/sand_ao.jpg")
+	material.normal_enabled = true
+	material.normal_texture = load("res://assets/textures/sand/sand_normal.jpg")
+	material.uv1_scale = Vector3(SAND_TILING, SAND_TILING, 1.0)
 	return material
