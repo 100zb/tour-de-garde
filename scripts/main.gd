@@ -148,10 +148,14 @@ func _scatter_rocks() -> void:
 		var height := rng.randf_range(0.8, 3.6)
 		var depth := rng.randf_range(1.2, 4.5)
 
+		var pos_x := cos(angle) * distance
+		var pos_z := sin(angle) * distance
+		var ground_y: float = $NavigationRegion3D/Ground.get_height(pos_x, pos_z)
+
 		var body := StaticBody3D.new()
 		body.collision_layer = 1
 		body.collision_mask = 0
-		body.position = Vector3(cos(angle) * distance, height * 0.4, sin(angle) * distance)
+		body.position = Vector3(pos_x, ground_y + height * 0.4, pos_z)
 		body.rotation.y = rng.randf() * TAU
 		rocks.add_child(body)
 
@@ -191,10 +195,14 @@ func _scatter_ruins() -> void:
 		var height := rng.randf_range(2.2, 3.8)
 		var thickness := rng.randf_range(0.8, 1.3)
 
+		var pos_x := cos(angle) * distance
+		var pos_z := sin(angle) * distance
+		var ground_y: float = $NavigationRegion3D/Ground.get_height(pos_x, pos_z)
+
 		var body := StaticBody3D.new()
 		body.collision_layer = 1
 		body.collision_mask = 0
-		body.position = Vector3(cos(angle) * distance, height * 0.5, sin(angle) * distance)
+		body.position = Vector3(pos_x, ground_y + height * 0.5, pos_z)
 		body.rotation.y = rng.randf() * TAU
 		ruins.add_child(body)
 

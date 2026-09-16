@@ -19,6 +19,15 @@ const ACCELERATION := 8.0
 
 const NAV_UPDATE_INTERVAL := 0.25
 
+## Si l'ennemi avance moins que ce seuil pendant tout un intervalle alors
+## qu'il essaie de se deplacer (coince contre un obstacle mal degage du
+## maillage de navigation, par exemple), on force un nouveau chemin et on le
+## pousse temporairement de cote pour le decoincer.
+const STUCK_CHECK_INTERVAL := 1.0
+const STUCK_DISTANCE_THRESHOLD := 0.4
+const STUCK_NUDGE_STRENGTH := 2.5
+const STUCK_NUDGE_DURATION := 0.6
+
 var kind: Kind = Kind.RODEUR
 var max_health: float = 40.0
 var health: float = 40.0
@@ -28,6 +37,11 @@ var scrap_value: int = 12
 
 var _attack_cooldown := 0.0
 var _nav_update_timer := 0.0
+var _stuck_check_timer := STUCK_CHECK_INTERVAL
+var _stuck_check_started := false
+var _stuck_last_position := Vector3.ZERO
+var _stuck_nudge_dir := Vector3.ZERO
+var _stuck_nudge_timer := 0.0
 var _relay: Node3D
 var _player: Node3D
 var _material: StandardMaterial3D
@@ -93,11 +107,17 @@ func _physics_process(delta: float) -> void:
 		velocity.x = move_toward(velocity.x, 0.0, ACCELERATION * speed * delta)
 		velocity.z = move_toward(velocity.z, 0.0, ACCELERATION * speed * delta)
 		_try_attack(target)
+		# On attaque volontairement immobile : ne pas compter ca comme coince,
+		# et repartir d'une mesure fraiche quand le deplacement reprendra.
+		_stuck_check_started = false
+		_stuck_nudge_dir = Vector3.ZERO
+		_stuck_nudge_timer = 0.0
 	else:
 		_update_navigation(target, delta)
+		_update_stuck_check(delta)
 		var to_next_point := nav_agent.get_next_path_position() - global_position
 		to_next_point.y = 0.0
-		var desired := to_next_point.normalized() * speed + _separation()
+		var desired := to_next_point.normalized() * speed + _separation() + _stuck_nudge_dir * STUCK_NUDGE_STRENGTH
 		velocity.x = move_toward(velocity.x, desired.x, ACCELERATION * speed * delta)
 		velocity.z = move_toward(velocity.z, desired.z, ACCELERATION * speed * delta)
 		_face(to_next_point)
@@ -116,6 +136,30 @@ func _update_navigation(target: Node3D, delta: float) -> void:
 	if _nav_update_timer <= 0.0:
 		_nav_update_timer = NAV_UPDATE_INTERVAL
 		nav_agent.target_position = target.global_position
+
+## Verifie une fois par intervalle si l'ennemi a reellement avance. Si non,
+## force un nouveau chemin et applique une poussee laterale temporaire pour
+## le sortir d'un obstacle mal degage.
+func _update_stuck_check(delta: float) -> void:
+	_stuck_check_timer -= delta
+	if _stuck_check_timer <= 0.0:
+		_stuck_check_timer = STUCK_CHECK_INTERVAL
+		var flat_position := global_position
+		flat_position.y = 0.0
+		if _stuck_check_started and flat_position.distance_to(_stuck_last_position) < STUCK_DISTANCE_THRESHOLD:
+			_nav_update_timer = 0.0
+			var side := Vector3(-velocity.z, 0.0, velocity.x)
+			if side.length_squared() < 0.01:
+				side = Vector3.FORWARD.rotated(Vector3.UP, randf() * TAU)
+			_stuck_nudge_dir = side.normalized()
+			_stuck_nudge_timer = STUCK_NUDGE_DURATION
+		_stuck_last_position = flat_position
+		_stuck_check_started = true
+
+	if _stuck_nudge_timer > 0.0:
+		_stuck_nudge_timer -= delta
+		if _stuck_nudge_timer <= 0.0:
+			_stuck_nudge_dir = Vector3.ZERO
 
 func _pick_target() -> Node3D:
 	var player_alive: bool = is_instance_valid(_player) and not _player.is_dead

@@ -12,10 +12,12 @@ const HILLY_RADIUS := 140.0
 @onready var mesh_instance: MeshInstance3D = $GroundMesh
 @onready var collision: CollisionShape3D = $GroundCollision
 
+var _noise: FastNoiseLite
+
 func _ready() -> void:
-	var noise := FastNoiseLite.new()
-	noise.seed = 20260915
-	noise.frequency = 0.015
+	_noise = FastNoiseLite.new()
+	_noise.seed = 20260915
+	_noise.frequency = 0.015
 
 	var plane := PlaneMesh.new()
 	plane.size = Vector2(SIZE, SIZE)
@@ -30,7 +32,7 @@ func _ready() -> void:
 
 	for i in mdt.get_vertex_count():
 		var v := mdt.get_vertex(i)
-		v.y = _height_at(v.x, v.z, noise)
+		v.y = _height_at(v.x, v.z, _noise)
 		mdt.set_vertex(i, v)
 
 	array_mesh.clear_surfaces()
@@ -54,6 +56,12 @@ func _height_at(x: float, z: float, noise: FastNoiseLite) -> float:
 	var distance := Vector2(x, z).length()
 	var slope := smoothstep(FLAT_RADIUS, HILLY_RADIUS, distance)
 	return noise.get_noise_2d(x, z) * AMPLITUDE * slope
+
+## Meme calcul que le maillage, expose pour que d'autres scripts (les
+## rochers, les ruines) puissent poser leurs objets a la vraie hauteur du
+## sol au lieu de supposer un terrain plat.
+func get_height(x: float, z: float) -> float:
+	return _height_at(x, z, _noise)
 
 func _sand_material() -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()
