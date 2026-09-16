@@ -25,6 +25,7 @@ func _ready() -> void:
 	_scatter_rocks()
 	_scatter_ruins()
 	_bake_navigation()
+	_decorate_relay_surroundings()
 	Game.announce("Defends le relais. Tab pour l'atelier.")
 
 func _unhandled_input(_event: InputEvent) -> void:
@@ -236,3 +237,60 @@ func _bake_navigation() -> void:
 	nav_mesh.cell_height = 0.25
 	$NavigationRegion3D.navigation_mesh = nav_mesh
 	$NavigationRegion3D.bake_navigation_mesh()
+
+## Ajoute des elements visuels simples autour du relais : une dalle au sol,
+## un anneau de renfort sur le fut, et un socle visible sous chaque
+## emplacement de tourelle (visible meme avant achat). Purement decoratif,
+## sans collision, en dehors du NavigationRegion3D.
+func _decorate_relay_surroundings() -> void:
+	var decor := Node3D.new()
+	decor.name = "RelayDecor"
+	add_child(decor)
+
+	var foundation_mesh := CylinderMesh.new()
+	foundation_mesh.top_radius = 10.0
+	foundation_mesh.bottom_radius = 10.0
+	foundation_mesh.height = 0.25
+
+	var foundation_material := StandardMaterial3D.new()
+	foundation_material.albedo_color = Color(0.4, 0.35, 0.27)
+	foundation_material.roughness = 0.9
+
+	var foundation := MeshInstance3D.new()
+	foundation.mesh = foundation_mesh
+	foundation.material_override = foundation_material
+	foundation.position = Vector3(0.0, 0.05, 0.0)
+	decor.add_child(foundation)
+
+	var collar_mesh := CylinderMesh.new()
+	collar_mesh.top_radius = 2.0
+	collar_mesh.bottom_radius = 2.0
+	collar_mesh.height = 0.4
+
+	var collar_material := StandardMaterial3D.new()
+	collar_material.albedo_color = Color(0.3, 0.32, 0.37)
+	collar_material.metallic = 0.6
+	collar_material.roughness = 0.4
+
+	var collar := MeshInstance3D.new()
+	collar.mesh = collar_mesh
+	collar.material_override = collar_material
+	collar.position = Vector3(0.0, 3.0, 0.0)
+	decor.add_child(collar)
+
+	var pad_mesh := CylinderMesh.new()
+	pad_mesh.top_radius = 1.3
+	pad_mesh.bottom_radius = 1.3
+	pad_mesh.height = 0.15
+
+	var pad_material := StandardMaterial3D.new()
+	pad_material.albedo_color = Color(0.34, 0.35, 0.39)
+	pad_material.metallic = 0.4
+	pad_material.roughness = 0.6
+
+	for pad in turret_pads.get_children():
+		var pad_disc := MeshInstance3D.new()
+		pad_disc.mesh = pad_mesh
+		pad_disc.material_override = pad_material
+		pad_disc.position = Vector3(0.0, 0.08, 0.0)
+		pad.add_child(pad_disc)
